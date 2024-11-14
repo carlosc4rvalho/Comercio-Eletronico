@@ -1,0 +1,13 @@
+{
+  "source": {
+    "include": ["src/**/*.js, src/**/*.jsx"]
+  },
+  "opts": {
+    "destination": "docs"
+  },
+  "templates": {
+    "default": {
+      "layoutFile": "./node_modules/jsdoc/templates/default/layout.tmpl"
+    }
+  }
+}

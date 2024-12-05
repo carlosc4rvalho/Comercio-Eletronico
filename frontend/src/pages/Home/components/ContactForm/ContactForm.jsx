@@ -1,143 +1,112 @@
-import React, { useState, useRef } from 'react';
-import SuccessModal from '../SuccessModal';
+import React, { useState } from 'react';
 
 function ContactForm() {
-  const [submitButtonText, setSubmitButtonText] = useState('ENVIAR');
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(false);
-  const [formSuccessMessage, setFormSuccessMessage] = useState('');
-
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
     message: '',
   });
+  const [submitButtonText, setSubmitButtonText] = useState('ENVIAR');
+  const [feedback, setFeedback] = useState({ error: null, success: null });
 
-  const section1FirstInput = useRef(null);
-
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [id]: value }));
+    setFormData({ ...formData, [id]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const requiredFields = ['fullName', 'email', 'phone', 'message'];
-    const isValid = requiredFields.every(field => formData[field]);
-
-    if (!isValid) {
-      setFormError('Por favor, preencha todos os campos.');
+    if (Object.values(formData).some((field) => !field)) {
+      setFeedback({ error: 'Por favor, preencha todos os campos.', success: null });
       return;
     }
 
-    // Simulação de sucesso sem enviar os dados para um servidor
-    setFormSuccess(true);
+    setFeedback({ error: null, success: null });
+    setSubmitButtonText('ENVIANDO...');
 
-    const firstName = formData.fullName.split(' ')[0];
-    setFormSuccessMessage(`Formulário enviado com sucesso, ${firstName}!`);
-
-    // Limpeza do formulário após 3 segundos
-    setTimeout(() => {
-      setFormSuccess(false);
-      setFormSuccessMessage('');
-      setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        message: '',
+    try {
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
-    }, 3000);
-  };
 
-  const handleCloseModal = () => {
-    setFormSuccess(false);
+      if (response.ok) {
+        const firstName = formData.fullName.split(' ')[0];
+        setFeedback({ success: `Formulário enviado com sucesso, ${firstName}!`, error: null });
+        setFormData({ fullName: '', email: '', phone: '', message: '' });
+      } else {
+        const errorData = await response.json();
+        setFeedback({ error: errorData.error || 'Erro ao enviar o formulário.', success: null });
+      }
+    } catch (error) {
+      setFeedback({ error: 'Erro ao conectar com o servidor.', success: null });
+    } finally {
+      setSubmitButtonText('ENVIAR');
+    }
   };
 
   return (
-    <section id='contato' className='flex justify-center bg-purple bg-opacity-0'>
+    <section className="flex justify-center bg-purple bg-opacity-0">
       <form
-        id='Contato Formulário'
-        name='Contato Formulário'
-        className='m-8 flex w-full flex-col gap-4 md:w-1/2'
+        className="m-8 flex w-full flex-col gap-4 md:w-1/2"
         onSubmit={handleSubmit}
       >
         <header>
-          <h2 className='text-3xl uppercase font-semibold text-white md:text-5xl'>Entre em Contato</h2>
+          <h2 className="text-3xl uppercase font-semibold text-white md:text-5xl">
+            Entre em Contato
+          </h2>
         </header>
 
-        <InputField
-          ref={section1FirstInput}
-          id='fullName'
-          label='Nome Completo'
-          type='text'
-          placeholder='Digite seu nome completo'
-          value={formData.fullName}
-          onChange={handleInputChange}
-        />
-        <InputField
-          id='email'
-          label='Email Corporativo'
-          type='email'
-          placeholder='Digite seu email corporativo'
-          value={formData.email}
-          onChange={handleInputChange}
-        />
-        <InputField
-          id='phone'
-          label='Telefone'
-          type='tel'
-          placeholder='Digite seu telefone'
-          value={formData.phone}
-          onChange={handleInputChange}
-        />
-        <div className='flex flex-col gap-2'>
-          <label className='text-xl text-white' htmlFor='message'>
-            Mensagem:
-          </label>
-          <textarea
-            className='w-full rounded-3xl p-6 text-lg md:text-xl text-purple border-2 focus:border-green'
-            id='message'
-            placeholder='Digite sua mensagem'
-            value={formData.message}
-            onChange={handleInputChange}
-          />
-        </div>
+        {['fullName', 'email', 'phone', 'message'].map((field, idx) => (
+          <div key={idx} className="flex flex-col gap-2">
+            <label
+              className="text-lg md:text-xl text-white"
+              htmlFor={field}
+            >
+              {field === 'fullName'
+                ? 'Nome Completo'
+                : field === 'email'
+                ? 'Email Corporativo'
+                : field === 'phone'
+                ? 'Telefone'
+                : 'Mensagem'}
+            </label>
+            {field === 'message' ? (
+              <textarea
+                id={field}
+                placeholder={`Digite sua ${field}`}
+                value={formData[field]}
+                onChange={handleChange}
+                className="w-full rounded-3xl p-6 text-lg md:text-xl text-purple border-2 focus:border-green"
+              />
+            ) : (
+              <input
+                id={field}
+                type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
+                placeholder={`Digite seu ${field === 'fullName' ? 'nome completo' : field}`}
+                value={formData[field]}
+                onChange={handleChange}
+                className="w-full rounded-3xl p-6 text-lg md:text-xl text-purple border-2 focus:border-green"
+              />
+            )}
+          </div>
+        ))}
+
         <button
-          type='submit'
-          className='rounded-3xl bg-green p-5 text-2xl font-medium text-purple hover:opacity-75'
+          type="submit"
+          className="rounded-3xl bg-green p-5 text-2xl font-medium text-purple hover:opacity-75"
         >
           {submitButtonText}
         </button>
 
-        {formError && <span className='text-red-600'>{formError}</span>}
+        {feedback.error && <span className="text-red-600">{feedback.error}</span>}
+        {feedback.success && <span className="text-green-600">{feedback.success}</span>}
       </form>
-
-      <SuccessModal
-        isOpen={formSuccess}
-        message={formSuccessMessage}
-        onClose={handleCloseModal}
-      />
     </section>
   );
 }
-
-const InputField = React.forwardRef(({ id, label, type, placeholder, value, onChange }, ref) => (
-  <div className='flex flex-col gap-2'>
-    <label className='text-lg md:text-xl text-white' htmlFor={id}>
-      {label}:
-    </label>
-    <input
-      ref={ref}
-      className='w-full rounded-3xl p-6 text-lg md:text-xl text-purple border-2 focus:border-green'
-      id={id}
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-    />
-  </div>
-));
 
 export default ContactForm;

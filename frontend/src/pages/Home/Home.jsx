@@ -12,8 +12,6 @@ function Home() {
     <main
       style={{
         backgroundImage: 'linear-gradient(180deg, rgba(51, 1, 80, 0.8), rgba(44, 50, 98, 1))',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
       }}
     >
       <Header />
